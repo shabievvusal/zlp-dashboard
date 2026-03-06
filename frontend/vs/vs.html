@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="/vs/">
+  <title>СберЛогистика — WMS (через браузер)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Переключатель слева: выползает при приближении курсора */
+    .vs-sidebar-wrap {
+      position: fixed;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 56px;
+      z-index: 9999;
+      transition: width .18s ease-out;
+      pointer-events: none;
+    }
+    body.vs-sidebar-open .vs-sidebar-wrap {
+      width: 200px;
+      pointer-events: auto;
+    }
+    .vs-sidebar-tab {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 12px;
+      height: 56px;
+      background: var(--green);
+      border-radius: 0 8px 8px 0;
+      box-shadow: 2px 0 10px rgba(0,0,0,.12);
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 10px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      letter-spacing: .5px;
+    }
+    .vs-sidebar-content {
+      position: absolute;
+      left: 12px;
+      top: 0;
+      width: 188px;
+      height: 100%;
+      padding: 12px 10px;
+      background: var(--bg-card);
+      border-radius: 0 8px 8px 0;
+      box-shadow: 4px 0 16px rgba(0,0,0,.1);
+      overflow: hidden;
+      font-size: 12px;
+      color: var(--text);
+    }
+    .vs-sidebar-content .vs-label {
+      font-weight: 600;
+      color: var(--green);
+      margin-bottom: 8px;
+      white-space: nowrap;
+    }
+    .vs-sidebar-content a {
+      display: block;
+      padding: 6px 0;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color .15s;
+    }
+    .vs-sidebar-content a:hover {
+      color: var(--green);
+    }
+    /* Зона срабатывания: приближение курсора к левому краю */
+    .vs-trigger-zone {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 40px;
+      z-index: 9998;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body class="vs-page">
+
+<!-- Переключатель слева: выползает при приближении курсора -->
+<div class="vs-trigger-zone" id="vs-trigger-zone" aria-hidden="true"></div>
+<div class="vs-sidebar-wrap" id="vs-sidebar-wrap">
+  <div class="vs-sidebar-tab" title="Подключение через браузер">VS</div>
+</div>
+
+<!-- ═══════════════ ЭКРАН ВХОДА ═══════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">СЛ</div>
+      <div class="login-logo-text">
+        <h1>СберЛогистика</h1>
+        <p>WMS · через браузер</p>
+      </div>
+    </div>
+    <h2 class="login-title">Вход в систему</h2>
+    <p class="login-subtitle">Введите данные учётной записи Самокат WMS</p>
+    <form id="login-form" autocomplete="on">
+      <div class="form-group">
+        <label for="input-login">Телефон</label>
+        <input class="form-control" type="text" id="input-login" placeholder="+7XXXXXXXXXX" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label for="input-password">Пароль</label>
+        <input class="form-control" type="password" id="input-password" placeholder="Пароль" autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn-primary-lg" id="btn-login">Войти</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════ ДАШБОРД ═══════════════ -->
+<div id="dashboard">
+
+  <header class="header">
+    <div class="header-brand">
+      <div class="brand-icon">СЛ</div>
+      <div>
+        <div class="brand-name">СберЛогистика</div>
+        <div class="brand-sub">WMS · через браузер</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="schedule-status">
+        <span class="schedule-dot dot-gray" id="schedule-indicator" title="Статус автосбора"></span>
+        <span id="last-run"></span>
+      </div>
+      <button class="btn btn-ghost" id="btn-logout">Выйти</button>
+    </div>
+  </header>
+
+  <nav class="tabs-nav">
+    <button class="tab-btn active" data-tab="tab-stats">📊 Статистика</button>
+    <button class="tab-btn" data-tab="tab-data">📋 Данные</button>
+    <button class="tab-btn" data-tab="tab-monitor">👁 Мониторинг</button>
+    <button class="tab-btn" data-tab="tab-consolidation">📦 Консолидация</button>
+    <button class="tab-btn" data-tab="tab-docs">📝 Документы</button>
+    <button class="tab-btn" data-tab="tab-settings">⚙️ Настройки</button>
+  </nav>
+
+  <div id="tab-stats" class="tab-content active">
+    <div class="main-content">
+      <div class="toolbar">
+        <div class="shift-select-wrap">
+          <label for="date-picker-stats">Дата:</label>
+          <input type="date" class="date-picker-input select-control" id="date-picker-stats" />
+        </div>
+        <div class="shift-toggle-wrap">
+          <span class="shift-toggle-label">Смена:</span>
+          <button type="button" class="filter-chip shift-toggle-btn active" data-shift="day" id="shift-toggle-day-stats">День (9–21)</button>
+          <button type="button" class="filter-chip shift-toggle-btn" data-shift="night" id="shift-toggle-night-stats">Ночь (22–9)</button>
+        </div>
+        <div class="fetch-range-wrap">
+          <label for="fetch-hour-from">Выгрузить с</label>
+          <input type="number" id="fetch-hour-from" class="fetch-hour-input" min="0" max="23" value="9" title="Час начала (0–23)" />
+          <label for="fetch-hour-to">до</label>
+          <input type="number" id="fetch-hour-to" class="fetch-hour-input" min="0" max="23" value="21" title="Час конца (исключительно, 0–23)" />
+          <span class="muted-text" style="margin-left:4px">ч</span>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-primary" id="btn-fetch-now">⟳ Обновить данные</button>
+          <button type="button" class="btn btn-secondary btn-square" id="btn-recheck-from-hour" title="Перепроверить данные с указанного часа">⟳</button>
+          <span id="last-run-stats" class="muted-text"></span>
+        </div>
+      </div>
+      <div id="stats-cards">
+        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value">—</div><div class="stat-label">Операций</div></div>
+        <div class="stat-card stat-card--green"><div class="stat-icon">🔢</div><div class="stat-value">—</div><div class="stat-label">Единиц товара</div></div>
+        <div class="stat-card"><div class="stat-icon">👷</div><div class="stat-value">—</div><div class="stat-label">Сотрудников</div></div>
+        <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value stat-value--sm">—</div><div class="stat-label">Смена</div></div>
+      </div>
+      <div class="filters-section">
+        <div class="filters-label">Фильтр по подрядчику</div>
+        <div id="company-filter">
+          <button class="filter-chip active" data-company="__all__">Все сотрудники</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <span>Пики по часам</span>
+          <span class="card-header-sub">операции и сотрудники за каждый час; столбики — хранение и КДК</span>
+        </div>
+        <div id="hourly-chart">
+          <div class="empty-row" style="padding:20px;text-align:center;color:var(--text-muted)">Нет данных</div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <span>Сотрудники по часам</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button type="button" class="btn btn-secondary" id="btn-export-hourly-xlsx" title="Скачать таблицу в Excel с раскраской СЗ">↓ XLSX</button>
+            <button type="button" class="btn btn-secondary" id="btn-hourly-telegram-png" title="Отправить статистику (PNG) в Telegram">📨 В Telegram</button>
+          </div>
+        </div>
+        <div id="hourly-employee-table-wrap">
+          <div class="empty-row" style="padding:20px;text-align:center;color:var(--text-muted)">Нет данных</div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <span>Топ сотрудников</span>
+          <span class="card-header-sub">по количеству единиц товара</span>
+        </div>
+        <div class="executor-scroll">
+          <table class="executor-table">
+            <thead>
+              <tr>
+                <th style="width:36px">#</th>
+                <th>Компания</th>
+                <th>Сотрудник</th>
+                <th style="width:220px">Единицы</th>
+                <th style="text-align:right;width:70px">Опер.</th>
+                <th style="text-align:right;width:130px">Старт – Последний</th>
+              </tr>
+            </thead>
+            <tbody id="executor-tbody">
+              <tr><td colspan="5" class="empty-row">Нет данных</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-data" class="tab-content">
+    <div class="main-content">
+      <div class="toolbar">
+        <div class="shift-select-wrap">
+          <label for="date-picker-data">Дата:</label>
+          <input type="date" class="date-picker-input select-control" id="date-picker-data" />
+        </div>
+        <div class="shift-toggle-wrap">
+          <span class="shift-toggle-label">Смена:</span>
+          <button type="button" class="filter-chip shift-toggle-btn active" data-shift="day" id="shift-toggle-day-data">День (9–21)</button>
+          <button type="button" class="filter-chip shift-toggle-btn" data-shift="night" id="shift-toggle-night-data">Ночь (22–9)</button>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-secondary" id="btn-export">↓ Экспорт CSV</button>
+        </div>
+      </div>
+      <div class="card ops-card">
+        <div class="card-header">
+          <span>Операции</span>
+          <span id="table-counter" class="card-header-sub"></span>
+        </div>
+        <div class="ops-toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="Поиск: сотрудник, товар, ячейка...">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="ops-table">
+            <thead id="ops-thead"></thead>
+            <tbody id="ops-tbody">
+              <tr><td colspan="7" class="empty-row">Выберите смену для отображения данных</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="pagination"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-monitor" class="tab-content">
+    <div class="main-content">
+      <div class="toolbar">
+        <div class="toolbar-right" style="gap:12px;align-items:center;display:flex;width:100%;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <button class="btn btn-primary" id="btn-rollcall">📋 Перекличка</button>
+            <span id="monitor-rollcall-info" class="muted-text"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <button class="btn btn-secondary" id="btn-monitor-refresh">⟳ Обновить</button>
+            <span id="monitor-last-updated" class="muted-text"></span>
+          </div>
+        </div>
+      </div>
+      <div id="monitor-error" style="display:none;margin-bottom:12px;padding:10px 14px;background:#fee2e2;color:#991b1b;border-radius:8px;font-size:13px;"></div>
+      <div id="monitor-companies">
+        <div class="monitor-empty">Перекличка не проведена. Нажмите «Перекличка» чтобы отметить сотрудников на смене.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="rollcall-modal" class="modal-overlay">
+    <div class="modal-window">
+      <div class="modal-header">
+        <span class="modal-title">📋 Перекличка — кто на смене</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-ghost btn-sm" id="btn-rc-all-global">Все</button>
+          <button class="btn btn-ghost btn-sm" id="btn-rc-none-global">Никого</button>
+          <button class="btn-icon" id="btn-rollcall-close" title="Закрыть">✕</button>
+        </div>
+      </div>
+      <div class="modal-body" id="rollcall-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-rollcall-cancel">Отмена</button>
+        <button class="btn btn-primary" id="btn-rollcall-save">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="employee-edit-modal" class="modal-overlay">
+    <div class="modal-window modal-window--sm">
+      <div class="modal-header">
+        <span class="modal-title">Сотрудник</span>
+        <button class="btn-icon" id="btn-employee-modal-close" title="Закрыть">✕</button>
+      </div>
+      <div class="modal-body" id="employee-edit-modal-body">
+        <div class="setting-row">
+          <label class="setting-label">ФИО</label>
+          <div id="employee-edit-fio" class="setting-desc"></div>
+        </div>
+        <div class="setting-row">
+          <label class="setting-label" for="employee-edit-company">Компания</label>
+          <select id="employee-edit-company" class="form-control" style="max-width:220px;"></select>
+        </div>
+        <div class="setting-row">
+          <label class="setting-label">На смене</label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="employee-edit-onshift">
+            <span>На смене</span>
+          </label>
+          <span class="setting-desc" style="margin-left:8px;">Снять — «Нет на смене»</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-employee-modal-cancel">Отмена</button>
+        <button class="btn btn-primary" id="btn-employee-modal-save">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-consolidation" class="tab-content">
+    <div class="main-content">
+      <div class="cons-toolbar">
+        <button class="btn btn-primary" id="cons-refresh-btn">⟳ Обновить</button>
+        <button class="btn btn-secondary" id="cons-lookup-all-btn">🔍 Проверить все</button>
+        <button class="btn btn-secondary" id="cons-send-telegram-btn">📨 Отправить в Telegram</button>
+        <div class="cons-bulk-actions">
+          <select id="cons-bulk-status" class="cons-status-select">
+            <option value="new">Новая</option>
+            <option value="in_progress">В работе</option>
+            <option value="resolved">Решена</option>
+          </select>
+          <button class="btn btn-secondary" id="cons-bulk-apply-status">Изменить статус</button>
+          <button class="btn btn-secondary" id="cons-bulk-lookup">Проверить выбранные</button>
+          <button class="btn btn-danger" id="cons-bulk-delete">Удалить выбранные</button>
+        </div>
+        <div class="cons-counters">
+          <span>Всего: <b id="cons-count-total">0</b></span>
+          <span>Новых: <b id="cons-count-new">0</b></span>
+          <span>Выбрано: <b id="cons-count-selected">0</b></span>
+        </div>
+        <div id="cons-filters" class="cons-filters">
+          <button class="cons-filter-chip active" data-filter="all">Все</button>
+          <button class="cons-filter-chip" data-filter="new">Новые</button>
+          <button class="cons-filter-chip" data-filter="in_progress">В работе</button>
+          <button class="cons-filter-chip" data-filter="resolved">Решённые</button>
+        </div>
+      </div>
+      <div class="card" style="overflow:visible;">
+        <div class="card-header">
+          <span>Жалобы на нарушения</span>
+          <a href="/consolidation.html" target="_blank" class="card-header-sub" style="text-decoration:underline;">Форма для сотрудников</a>
+        </div>
+        <div class="cons-table-scroll">
+          <div id="cons-table-wrap">
+            <div class="cons-empty">Нажмите «Обновить» для загрузки</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модалка для просмотра фото -->
+  <div id="cons-photo-modal" class="modal-overlay cons-photo-modal">
+    <div class="cons-photo-modal-inner">
+      <button class="cons-photo-modal-close" title="Закрыть">&times;</button>
+      <button id="cons-photo-prev" class="cons-photo-nav cons-photo-nav--prev" title="Предыдущее">&#10094;</button>
+      <img id="cons-photo-modal-img" src="" alt="Фото">
+      <button id="cons-photo-next" class="cons-photo-nav cons-photo-nav--next" title="Следующее">&#10095;</button>
+      <div id="cons-photo-counter" class="cons-photo-counter">1 / 1</div>
+    </div>
+  </div>
+
+  <div id="tab-settings" class="tab-content">
+    <div class="main-content">
+      <div class="settings-grid">
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon">🔄</div>
+            <div>
+              <div class="settings-card-title">Автосбор данных</div>
+              <div class="settings-card-sub">Периодический запрос к Samokat WMS API</div>
+            </div>
+          </div>
+          <div class="settings-body">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Статус автосбора</div>
+                <div class="setting-desc" id="schedule-status-text">Проверяется...</div>
+              </div>
+              <div class="setting-control" style="display:flex;gap:8px;">
+                <button class="btn btn-primary" id="settings-schedule-start">▶ Запустить</button>
+                <button class="btn btn-danger" id="settings-schedule-stop">⏹ Остановить</button>
+              </div>
+            </div>
+            <div class="setting-divider"></div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Автообновление токена</div>
+                <div class="setting-desc">
+                  Сервер сам обновляет токен каждые 4 мин — браузер закрывать можно.<br>
+                  Если не запущен — после 5 мин сбор упадёт с ошибкой 401.
+                </div>
+              </div>
+              <div class="setting-control">
+                <span class="setting-desc" id="token-refresher-status">Проверяется...</span>
+              </div>
+            </div>
+            <div class="setting-divider"></div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Интервал сбора</div>
+                <div class="setting-desc">Как часто запрашивать данные из API</div>
+              </div>
+              <div class="setting-control">
+                <div class="input-with-unit">
+                  <input type="number" class="form-control" id="setting-interval" min="1" max="1440" value="10" style="width:90px">
+                  <span class="input-unit">мин</span>
+                </div>
+              </div>
+            </div>
+            <div class="setting-divider"></div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Записей на страницу</div>
+                <div class="setting-desc">
+                  Сколько операций запрашивать за один HTTP-запрос к API.<br>
+                  Больше = меньше запросов, но дольше ответ. Рекомендуется 500.
+                </div>
+              </div>
+              <div class="setting-control">
+                <div class="input-with-unit">
+                  <input type="number" class="form-control" id="setting-page-size" min="1" max="1000" value="500" style="width:90px">
+                  <span class="input-unit">/ страница</span>
+                </div>
+              </div>
+            </div>
+            <div class="setting-divider"></div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Диапазон запроса</div>
+                <div class="setting-desc">Данные запрашиваются за текущую смену (9:00–21:00 / 21:00–9:00)</div>
+              </div>
+              <div class="setting-control">
+                <span class="badge badge-green">Текущая смена</span>
+              </div>
+            </div>
+            <div class="settings-actions">
+              <button class="btn btn-primary" id="btn-save-schedule">Сохранить настройки</button>
+            </div>
+          </div>
+        </div>
+        <div class="settings-card settings-card--wide">
+          <div class="settings-card-header">
+            <div class="settings-card-icon">👥</div>
+            <div>
+              <div class="settings-card-title">Список сотрудников</div>
+              <div class="settings-card-sub" id="empl-file-info">Проверяется...</div>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+              <label class="btn btn-secondary" style="cursor:pointer;">
+                📂 Импорт CSV
+                <input type="file" id="empl-file-input" accept=".csv" style="display:none">
+              </label>
+              <button class="btn btn-secondary" id="btn-export-empl">↓ Экспорт CSV</button>
+              <button class="btn btn-primary" id="btn-save-empl">💾 Сохранить в empl.csv</button>
+            </div>
+          </div>
+          <div class="settings-body">
+            <div class="empl-no-company-section">
+              <h4 class="empl-subtitle">Сотрудники без компании</h4>
+              <p class="settings-hint">Из данных по операциям, но их нет в empl.csv. Нажмите на ФИО → введите компанию → сохранится в empl.csv.</p>
+              <ul id="empl-no-company-list" class="empl-no-company-list"></ul>
+              <div id="empl-no-company-empty" class="empty" style="display:none;">Нет таких сотрудников. Загрузите данные на вкладке «Данные».</div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon">📁</div>
+            <div>
+              <div class="settings-card-title">Сохранённые смены</div>
+              <div class="settings-card-sub">Файлы в папке backend/data/</div>
+            </div>
+          </div>
+          <div class="settings-body">
+            <table class="executor-table" id="shifts-info-table">
+              <thead>
+                <tr>
+                  <th>Смена</th>
+                  <th style="text-align:right">Операций</th>
+                  <th>Обновлено</th>
+                </tr>
+              </thead>
+              <tbody id="shifts-info-tbody">
+                <tr><td colspan="3" class="empty-row">Загрузка...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon">📨</div>
+            <div>
+              <div class="settings-card-title">Telegram уведомления</div>
+              <div class="settings-card-sub" id="telegram-status">Проверяется...</div>
+            </div>
+          </div>
+          <div class="settings-body">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Bot token</div>
+                <div class="setting-desc">Вставьте токен только при изменении. Храним на сервере.</div>
+              </div>
+              <div class="setting-control">
+                <input type="password" class="form-control" id="setting-telegram-token" placeholder="123456:ABC..." style="width:280px">
+              </div>
+            </div>
+            <div class="setting-divider"></div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Чаты и пользователи</div>
+                <div class="setting-desc">Добавьте один или несколько чатов/групп. Для каждого укажите Chat ID и Thread ID тем: «Ошибки комплектации» (жалобы) и «Статистика» (отчёты по часам).</div>
+              </div>
+              <div class="setting-control" style="flex-direction:column;align-items:flex-start;">
+                <div id="telegram-chats-list" class="telegram-chats-list"></div>
+                <button type="button" class="btn btn-sm btn-secondary" id="btn-telegram-add-chat">+ Добавить чат</button>
+              </div>
+            </div>
+            <div class="settings-actions">
+              <button class="btn btn-primary" id="btn-save-telegram">Сохранить Telegram</button>
+              <button class="btn btn-secondary" id="btn-clear-telegram">Очистить Telegram</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-docs" class="tab-content">
+    <div class="main-content">
+      <div class="card">
+        <div class="card-header">
+          <span>Служебные записки и объяснительные</span>
+          <span class="card-header-sub">С акцентом на должностные инструкции</span>
+        </div>
+        <iframe class="docs-iframe" src="/memos.html" title="Документы"></iframe>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="loading-spinner">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--text-muted)">Загрузка данных...</div>
+</div>
+
+<div id="notifications"></div>
+
+<script>window.VS_PAGE = true;</script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script type="module" src="js/app.js"></script>
+<script>
+  (function() {
+    var trigger = document.getElementById('vs-trigger-zone');
+    var wrap = document.getElementById('vs-sidebar-wrap');
+    var open = false;
+    function setOpen(yes) {
+      open = yes;
+      document.body.classList.toggle('vs-sidebar-open', yes);
+    }
+    trigger.addEventListener('mouseenter', function() { setOpen(true); });
+    trigger.addEventListener('mouseleave', function(e) {
+      var x = e.clientX;
+      if (x > 220) setOpen(false);
+    });
+    wrap.addEventListener('mouseleave', function(e) {
+      if (e.clientX < 12 || e.clientX > 220) setOpen(false);
+    });
+    document.addEventListener('mousemove', function(e) {
+      if (e.clientX <= 40 && !open) setOpen(true);
+      if (e.clientX > 220 && open) setOpen(false);
+    });
+  })();
+</script>
+</body>
+</html>

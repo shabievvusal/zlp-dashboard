@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OWMS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <div class="header-top">
+        <div>
+          <h1>OWMS</h1>
+          <p class="subtitle" id="subtitle"> API stocks/changes</p>
+        </div>
+        <nav class="main-nav">
+          <a href="#" class="nav-link nav-link-active" id="nav-main" data-hash="">Главная</a>
+          <a href="#/dsh" class="nav-link" id="nav-dsh" data-hash="#/dsh">Дашборд</a>
+          <a href="#/se" class="nav-link" id="nav-se" data-hash="#/se">Настройки</a>
+        </nav>
+        <!-- ЗАМЕНИТЕ блок vpn-toggle на этот -->
+<div class="vpn-toggle-wrap">
+  <span class="vpn-toggle-label">Режим подключения:</span>
+  <div class="vpn-toggle">
+    <button type="button" class="btn btn-mode-connection btn-mode-connection-active" id="btn-mode-server" data-mode="server" title="Запросы через сервер - работает из любой сети">
+      🌐 Дом/Офис
+    </button>
+    <button type="button" class="btn btn-mode-connection" id="btn-mode-browser" data-mode="browser" title="Запросы напрямую - нужен VPN">
+      🔒 VPN (Самокат)
+    </button>
+  </div>
+  <span class="label-hint" id="connection-hint" style="margin-left: 10px; color: #4CAF50;">
+    ✓ Дом/Офис - работает всегда
+  </span>
+</div>
+    </header>
+
+    <div id="page-main">
+    <section class="panel controls">
+      <div class="row">
+        <button type="button" id="btn-fetch" class="btn btn-primary">Получить данные сейчас</button>
+        <label class="label-inline" title="Если с сервера приходит HTML — запрос пойдёт из браузера и обычно проходит">
+          <input type="checkbox" id="fetch-via-browser"> Через браузер
+        </label>
+        <label class="label-inline">
+          Интервал (мин):
+          <input type="number" id="interval" min="1" max="1440" value="60">
+        </label>
+        <button type="button" id="btn-start" class="btn btn-success">Старт</button>
+        <button type="button" id="btn-stop" class="btn btn-danger">Стоп</button>
+      </div>
+      <div class="row status-row">
+        <div id="status" class="status">Статус: Ожидание</div>
+        <div id="status-detail" class="status-detail"></div>
+      </div>
+    </section>
+
+    <section class="panel settings">
+      <h2>Настройки</h2>
+      
+      <!-- ФОРМА ВХОДА -->
+      <div id="login-form" class="auth-form">
+        <h3>Вход в систему Самокат</h3>
+        <div class="row">
+          <label class="label-block">
+            Телефон
+            <input type="text" id="login" placeholder="+79291101007" value="+79291101007">
+          </label>
+          <label class="label-block">
+            Пароль
+            <input type="password" id="password" placeholder="Пароль">
+          </label>
+          <button type="button" id="btn-login" class="btn btn-primary">Войти</button>
+        </div>
+        <hr>
+      </div>
+
+      <!-- ФОРМА ТОКЕНА (СКРЫТА ПО УМОЛЧАНИЮ) -->
+      <div id="token-form" style="display: none;">
+        <label class="label-block">
+          Bearer токен (автоматический)
+          <input type="password" id="token" placeholder="Токен будет получен автоматически" readonly>
+        </label>
+        <button type="button" id="btn-logout" class="btn btn-secondary">Выйти</button>
+        <hr>
+      </div>
+
+      <!-- СКРЫТЫЕ ПОЛЯ ДАТ -->
+      <input type="hidden" id="date-from" value="">
+      <input type="hidden" id="date-to" value="">
+      
+      <!-- ВЫБОР ДАТ -->
+      <div class="row dates">
+        <div class="date-range-trigger" id="date-range-trigger">
+          <span class="label-inline">С <span id="date-from-display" class="date-display">—</span></span>
+          <span class="label-inline">По <span id="date-to-display" class="date-display">—</span></span>
+        </div>
+        <button type="button" id="btn-set-today" class="btn btn-small">Сегодня</button>
+      </div>
+      
+      <!-- КАЛЕНДАРЬ -->
+      <div class="date-dropdown" id="date-dropdown" role="dialog" aria-hidden="true">
+        <div class="date-dropdown-inner">
+          <div class="date-dropdown-body">
+            <aside class="calendar-widget">
+              <header class="calendar-header">
+                <button type="button" class="calendar-nav" id="cal-prev" aria-label="Предыдущий месяц">‹</button>
+                <div class="calendar-period">
+                  <select id="cal-month" class="calendar-select" aria-label="Месяц"></select>
+                  <select id="cal-year" class="calendar-select" aria-label="Год"></select>
+                </div>
+                <button type="button" class="calendar-nav" id="cal-next" aria-label="Следующий месяц">›</button>
+              </header>
+              <div class="calendar-weekdays">
+                <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+              </div>
+              <div class="calendar-days" id="cal-days"></div>
+              <p class="calendar-hint">Первый клик — начало периода, второй — конец (или та же дата для одного дня)</p>
+            </aside>
+            <div class="calendar-times">
+              <hr class="calendar-divider">
+              <div class="time-row">
+                <div class="time-field">
+                  <label class="time-label">С</label>
+                  <input type="text" id="time-from" class="time-input" value="00:00" placeholder="ЧЧ:ММ" maxlength="5">
+                </div>
+                <div class="time-field">
+                  <label class="time-label">По</label>
+                  <input type="text" id="time-to" class="time-input" value="23:59" placeholder="ЧЧ:ММ" maxlength="5">
+                </div>
+              </div>
+            </div>
+          </div>
+          <footer class="date-dropdown-footer">
+            <button type="button" class="btn btn-small" id="date-reset">Сбросить</button>
+            <button type="button" class="btn btn-primary btn-small" id="date-apply">Применить</button>
+          </footer>
+        </div>
+      </div>
+
+      <!-- РЕЖИМ ЗАГРУЗКИ -->
+      <div class="row fetch-mode">
+        <span class="label-inline">Режим загрузки:</span>
+        <label class="label-inline radio-label">
+          <input type="radio" name="fetch-mode" value="single" checked> Одна страница
+        </label>
+        <label class="label-inline radio-label">
+          <input type="radio" name="fetch-mode" value="all"> Все страницы за период
+        </label>
+        <label class="label-inline radio-label">
+          <input type="radio" name="fetch-mode" value="limit"> Не более
+          <input type="number" id="max-rows" min="1" max="100000" value="5000" class="input-narrow"> записей
+        </label>
+      </div>
+
+      <!-- РАЗМЕР СТРАНИЦЫ -->
+      <div class="row page-size">
+        <span class="label-inline">Размер страницы:</span>
+        <label class="label-inline radio-label">
+          <input type="radio" name="page-size" value="100" checked> 100
+        </label>
+        <label class="label-inline radio-label">
+          <input type="radio" name="page-size" value="500"> 500
+        </label>
+        <label class="label-inline radio-label">
+          <input type="radio" name="page-size" value="1000"> 1000
+        </label>
+        <span class="label-hint">(рекомендуется 500-1000 для загрузки большого объёма)</span>
+      </div>
+
+      <!-- ПРОГРЕСС-БАР -->
+      <div class="row progress-bar" id="progress-container" style="display: none;">
+        <div class="progress-label">
+          <span id="progress-status">Загрузка...</span>
+          <span id="progress-percent">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+        </div>
+        <div class="progress-detail" id="progress-detail"></div>
+      </div>
+    </section>
+
+    <section class="panel table-section">
+      <div class="table-header">
+        <h2>Данные</h2>
+        <div class="view-tabs">
+          <button type="button" id="btn-view-stats" class="btn btn-tab btn-tab-active" title="Статистика по ответственным">Статистика</button>
+          <button type="button" id="btn-view-full" class="btn btn-tab" title="Полная таблица операций">Полная таблица</button>
+        </div>
+        <div class="table-actions">
+          <input type="text" id="filter" placeholder="Поиск по таблице..." class="filter-full-table">
+          <button type="button" id="btn-export-csv" class="btn btn-small">Экспорт CSV</button>
+        </div>
+      </div>
+      
+      <div class="table-layout">
+        <div class="company-filters" id="company-filters">
+          <span class="company-filters-label">Компании</span>
+          <button type="button" class="btn btn-company btn-company-active" data-company="__all__">Все</button>
+          <button type="button" class="btn btn-company" data-company="__none__">Без компании</button>
+          <div id="company-btns"></div>
+          <span class="company-filters-label shift-label">Смена</span>
+          <div class="shift-toggle">
+            <button type="button" class="btn btn-shift btn-shift-active" data-shift="day" title="День: 9:00–21:00">День</button>
+            <button type="button" class="btn btn-shift" data-shift="night" title="Ночь: 21:00–9:00">Ночь</button>
+          </div>
+        </div>
+        
+        <div class="table-area">
+          <div class="pagination-bar" id="pagination-bar">
+            <span id="pagination-info" class="pagination-info">—</span>
+            <div class="pagination-btns">
+              <button type="button" id="btn-page-first" class="btn btn-small" title="В начало">«</button>
+              <button type="button" id="btn-page-prev" class="btn btn-small" title="Назад">‹</button>
+              <span id="page-num" class="page-num">1</span>
+              <button type="button" id="btn-page-next" class="btn btn-small" title="Вперёд">›</button>
+              <button type="button" id="btn-page-last" class="btn btn-small" title="В конец">»</button>
+            </div>
+          </div>
+          
+          <div id="data-table-wrap">
+            <table id="data-table">
+              <thead id="data-thead"></thead>
+              <tbody id="data-tbody"></tbody>
+            </table>
+            <div id="data-empty" class="empty">Нет данных. Нажмите «Получить данные сейчас».</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel history">
+      <h2>История запросов</h2>
+      <ul id="history-list"></ul>
+    </section>
+    </div>
+
+    <!-- Страница дашборда /dsh -->
+    <div id="page-dsh" class="page-dsh" style="display: none;">
+      <section class="panel">
+        <h2>Аналитика по сотрудникам</h2>
+        <div class="dsh-data-source">
+          <span class="label-inline">Источник данных:</span>
+          <button type="button" id="dsh-use-current" class="btn btn-small btn-primary">Текущие данные</button>
+          <select id="dsh-history-file" class="dsh-select">
+            <option value="">— загрузить из файла —</option>
+          </select>
+          <span id="dsh-source-info" class="label-hint"></span>
+        </div>
+      </section>
+      <section class="panel dsh-table-panel">
+        <div class="dsh-toolbar">
+          <span class="shift-label">Смена</span>
+          <div class="shift-toggle dsh-shift-toggle">
+            <button type="button" class="btn btn-shift btn-shift-active dsh-shift" data-shift="day" title="День: 9:00–21:00">День</button>
+            <button type="button" class="btn btn-shift dsh-shift" data-shift="night" title="Ночь: 21:00–9:00">Ночь</button>
+          </div>
+          <span class="dsh-view-toggle">
+            <button type="button" class="btn btn-small dsh-toggle-btn dsh-toggle-active" id="dsh-btn-stats" data-view="stats">Статистика</button>
+            <button type="button" class="btn btn-small dsh-toggle-btn" id="dsh-btn-hours" data-view="hours">СЗ по часам</button>
+          </span>
+          <button type="button" class="btn btn-small btn-primary" id="dsh-btn-export-png" title="Сохранить таблицу в PNG (высокое качество)">Сохранить в PNG</button>
+          <button type="button" class="btn btn-small" id="dsh-btn-export-csv" title="Выгрузить таблицу в CSV">Выгрузка CSV</button>
+        </div>
+        <div id="dsh-table-wrap" class="table-area dsh-table-wrap">
+          <table id="dsh-unified-table" class="dsh-unified-table">
+            <thead id="dsh-thead"></thead>
+            <tbody id="dsh-tbody"></tbody>
+          </table>
+          <div id="dsh-empty" class="empty">Нет данных. Загрузите данные на главной или выберите файл.</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Страница настроек /se -->
+    <div id="page-se" class="page-se" style="display: none;">
+      <section class="panel">
+        <h2>Настройки</h2>
+        <h3>Сотрудники без компании</h3>
+        <p class="settings-hint">Сотрудники из данных, которых нет в списке empl.csv. Нажмите на ФИО, введите компанию — она сохранится в empl.csv.</p>
+        <div class="empl-no-company-wrap">
+          <ul id="empl-no-company-list" class="empl-no-company-list"></ul>
+          <div id="empl-no-company-empty" class="empty">Нет таких сотрудников или загрузите данные на главной.</div>
+        </div>
+      </section>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

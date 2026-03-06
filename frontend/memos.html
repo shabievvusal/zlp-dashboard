@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZLP - Служебные и объяснительные</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #eef3f7;
+      --card: #ffffff;
+      --text: #1d2a34;
+      --muted: #5e7182;
+      --line: #d4dde6;
+      --brand: #1f7a45;
+      --brand-2: #0e5a84;
+      --warn: #9a4d00;
+      --shadow: 0 8px 26px rgba(16, 32, 48, 0.08);
+      --r: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 8%, #dce9f5 0, transparent 26%),
+        radial-gradient(circle at 86% 14%, #e2f1e6 0, transparent 24%),
+        var(--bg);
+      color: var(--text);
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 18px;
+    }
+    .shell { max-width: 1260px; margin: 0 auto; }
+    .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    h1 { margin: 0; font-size: 24px; }
+    .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+    .top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .btn:hover { filter: brightness(0.98); }
+    .btn-brand { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .btn-alt { background: var(--brand-2); color: #fff; border-color: var(--brand-2); }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(380px, 1.15fr);
+      gap: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(160deg, #f8fbfd, #f2f7fb);
+    }
+    .card-head h2 { margin: 0; font-size: 16px; }
+    .pad { padding: 14px; }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .tab {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+    .row { display: grid; gap: 10px; margin-bottom: 10px; }
+    .row.two { grid-template-columns: 1fr 1fr; }
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font: inherit;
+      color: var(--text);
+      background: #fff;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--brand-2);
+      box-shadow: 0 0 0 3px rgba(14, 90, 132, 0.14);
+    }
+    textarea { min-height: 82px; resize: vertical; }
+    .paper-wrap {
+      background: #e6edf4;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    #output {
+      width: 210mm;
+      max-width: 100%;
+      min-height: 297mm;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #cfd8e3;
+      box-shadow: 0 4px 18px rgba(0,0,0,.08);
+      padding: 20mm 18mm;
+      font-family: "Times New Roman", serif;
+      font-size: 12pt;
+      line-height: 1.45;
+      color: #000;
+    }
+    .doc-center { text-align: center; font-weight: 700; }
+    .doc-sub { text-align: center; margin-top: 4px; }
+    .doc-date { text-align: right; margin-top: 10px; margin-bottom: 14px; }
+    .doc-p { text-align: justify; text-indent: 1.25cm; margin: 0 0 8px 0; }
+    .doc-p.no-indent { text-indent: 0; }
+    .doc-list { margin: 0 0 10px 0; padding-left: 20px; }
+    .doc-list li { margin-bottom: 4px; }
+    .doc-sign { margin-top: 18px; }
+    .doc-sign p { margin: 4px 0; }
+    .note {
+      font-size: 12px;
+      color: var(--warn);
+      background: #fff7ed;
+      border: 1px solid #ffd6ad;
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+    }
+    .hidden { display: none; }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      #output { min-height: 420px; width: 100%; padding: 16px 14px; }
+    }
+    @media print {
+      body {
+        background: #fff !important;
+        padding: 0 !important;
+      }
+      .head, .card:first-child {
+        display: none !important;
+      }
+      .grid {
+        display: block !important;
+      }
+      .card {
+        border: 0 !important;
+        box-shadow: none !important;
+      }
+      .card-head {
+        display: none !important;
+      }
+      .pad {
+        padding: 0 !important;
+      }
+      .paper-wrap {
+        background: #fff !important;
+        padding: 0 !important;
+      }
+      #output {
+        width: auto !important;
+        max-width: none !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        padding: 20mm 18mm !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="head">
+      <div>
+        <h1>Служебные записки и объяснительные</h1>
+        <p class="sub">Шаблоны с привязкой к должностным инструкциям (разделы 3 и 5 ДИ)</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="btn-clear">Очистить</button>
+        <button class="btn btn-alt" id="btn-copy">Скопировать</button>
+        <button class="btn" id="btn-print">Печать</button>
+        <button class="btn btn-brand" id="btn-download">Скачать Word (.doc)</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <div class="card-head">
+          <h2>Параметры документа</h2>
+          <span id="doc-kind-label">Служебная (BIDU)</span>
+        </div>
+        <div class="pad">
+          <div class="tabs">
+            <button class="tab active" data-kind="bidu">Служебная: BIDU</button>
+            <button class="tab" data-kind="surplus">Служебная: Излишки</button>
+            <button class="tab" data-kind="exp">Объяснительная</button>
+          </div>
+
+          <div class="row two">
+            <div>
+              <label for="doc-date">Дата</label>
+              <input id="doc-date" type="date">
+            </div>
+            <div>
+              <label for="job-role">Должность</label>
+              <select id="job-role">
+                <option value="receiving">Кладовщик (участок приема)</option>
+                <option value="placement">Кладовщик (участок размещения)</option>
+                <option value="forklift">Водитель погрузчика (участок размещения)</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="form-common">
+            <div class="row">
+              <div>
+                <label for="fio">ФИО сотрудника</label>
+                <input id="fio" type="text" placeholder="Иванов Иван Иванович">
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="fio-gen">ФИО в родительном падеже (опционально)</label>
+                <input id="fio-gen" type="text" placeholder="Иванова Ивана Ивановича">
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="product">Наименование товара</label>
+                <input id="product" type="text" placeholder="Товар">
+              </div>
+            </div>
+            <div class="row two">
+              <div>
+                <label for="article">Артикул</label>
+                <input id="article" type="text" placeholder="УТ-00000000">
+              </div>
+              <div>
+                <label for="quantity">Количество</label>
+                <input id="quantity" type="text" placeholder="1">
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="eo">ЕО</label>
+                <input id="eo" type="text" placeholder="323100000000">
+              </div>
+            </div>
+          </div>
+
+          <div id="form-exp" class="hidden">
+            <div class="note">Объяснительная заполняется от лица сотрудника.</div>
+            <div class="row">
+              <div>
+                <label for="exp-op">Операция/этап</label>
+                <input id="exp-op" type="text" placeholder="Приемка/размещение/сборка отправления">
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="exp-issue">Суть ошибки</label>
+                <textarea id="exp-issue" placeholder="Кратко опишите, что было сделано неверно"></textarea>
+              </div>
+            </div>
+            <div class="row two">
+              <div>
+                <label for="exp-reason-1">Причина 1</label>
+                <input id="exp-reason-1" type="text" placeholder="Невнимательность при сканировании">
+              </div>
+              <div>
+                <label for="exp-reason-2">Причина 2</label>
+                <input id="exp-reason-2" type="text" placeholder="Высокая нагрузка в смене">
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="exp-measures">Меры недопущения (по одной строке)</label>
+                <textarea id="exp-measures" placeholder="Проверка ЕО перед подтверждением&#10;Повторная сверка по ТСД"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="row two">
+            <div>
+              <label for="author">Составил/подписант</label>
+              <input id="author" type="text" placeholder="Петров П.П.">
+            </div>
+            <div>
+              <label for="author-role">Должность составителя</label>
+              <input id="author-role" type="text" placeholder="Старший смены">
+            </div>
+          </div>
+
+          <button class="btn btn-brand" id="btn-generate" style="width:100%;">Сформировать документ</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Результат</h2>
+          <span>Готово к вставке в Word/почту</span>
+        </div>
+        <div class="pad">
+          <div class="paper-wrap">
+            <div id="output"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="memos.js"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "owms-samokat-collector",
+  "version": "1.0.0",
+  "description": "Сбор данных с API Samokat WMS через VPN",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "samokat",
+    "wms",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "compression": "^1.8.1",
+    "express": "^4.21.0",
+    "iconv-lite": "^0.6.3",
+    "multer": "^1.4.5-lts.1"
+  }
+}
